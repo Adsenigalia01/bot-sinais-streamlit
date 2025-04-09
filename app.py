@@ -23,9 +23,9 @@ if st.button("🔍 Analisar"):
             df['SMA50'] = SMAIndicator(close=df['Close'], window=50).sma_indicator()
             df['SMA200'] = SMAIndicator(close=df['Close'], window=200).sma_indicator()
             df['RSI'] = RSIIndicator(close=df['Close']).rsi()
-            df['MACD'] = MACD(close=df['Close']).macd_diff()
-            df['Bollinger_low'] = BollingerBands(close=df['Close']).bollinger_lband()
-            df['Bollinger_high'] = BollingerBands(close=df['Close']).bollinger_hband()
+            df['MACD'] = MACD(close=df['Close']).macd_diff().squeeze()
+            df['Bollinger_low'] = BollingerBands(close=df['Close']).bollinger_lband().squeeze()
+            df['Bollinger_high'] = BollingerBands(close=df['Close']).bollinger_hband().squeeze()
             df['ADX'] = ADXIndicator(high=df['High'], low=df['Low'], close=df['Close']).adx()
 
             # Remove linhas com valores faltando (causam erro fora do horário de mercado)
