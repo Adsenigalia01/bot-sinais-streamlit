@@ -9,7 +9,7 @@ from ta.volatility import BollingerBands
 st.set_page_config(page_title="Bot de Sinais com Twelve Data", layout="wide")
 st.title("📊 Bot de Sinais com API da Twelve Data")
 
-api_key = st.secrets["TWELVE_DATA_API_KEY"] if "TWELVE_DATA_API_KEY" in st.secrets else st.text_input("1351656ba22446b98cd1964398849126", "")
+api_key = st.secrets["TWELVE_DATA_API_KEY"] if "TWELVE_DATA_API_KEY" in st.secrets else st.text_input("Digite sua API Key da Twelve Data:", "")
 
 ativo = st.text_input("Digite o código do ativo (ex: BTC/USD ou AAPL):", "BTC/USD")
 periodo = st.selectbox("Período de análise:", ["30", "60", "90", "180"], index=0)
