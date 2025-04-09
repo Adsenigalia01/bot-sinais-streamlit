@@ -27,40 +27,30 @@ if st.button("🔍 Analisar"):
             df['SMA200'] = SMAIndicator(close=df['Close'], window=200).sma_indicator()
             df['RSI'] = RSIIndicator(close=df['Close']).rsi()
 
-            # MACD seguro
+            # Corrigido: indicadores com saída 2D convertidos para 1D
             macd = MACD(close=df['Close'])
-            macd_diff = macd.macd_diff()
-            if isinstance(macd_diff, pd.DataFrame):
-                df['MACD'] = macd_diff.iloc[:, 0]
-            else:
-                df['MACD'] = macd_diff
+            df['MACD'] = pd.Series(macd.macd_diff().to_numpy().ravel(), index=df.index)
 
-            # Bollinger seguro
             bb = BollingerBands(close=df['Close'])
-            high = bb.bollinger_hband()
-            low = bb.bollinger_lband()
+            df['Bollinger_high'] = pd.Series(bb.bollinger_hband().to_numpy().ravel(), index=df.index)
+            df['Bollinger_low'] = pd.Series(bb.bollinger_lband().to_numpy().ravel(), index=df.index)
 
-            df['Bollinger_high'] = high.iloc[:, 0] if isinstance(high, pd.DataFrame) else high
-            df['Bollinger_low'] = low.iloc[:, 0] if isinstance(low, pd.DataFrame) else low
-
-            # ADX seguro
             adx = ADXIndicator(high=df['High'], low=df['Low'], close=df['Close'])
-            adx_values = adx.adx()
-            df['ADX'] = adx_values.iloc[:, 0] if isinstance(adx_values, pd.DataFrame) else adx_values
+            df['ADX'] = pd.Series(adx.adx().to_numpy().ravel(), index=df.index)
 
             # Estratégia de sinais
             def gerar_sinal(row):
                 sinais = []
                 if row['SMA50'] > row['SMA200']:
-                    sinais.append('Tendência de Alta')
+                    sinais.append('📈 Tendência de Alta')
                 if row['RSI'] < 30:
-                    sinais.append('Sobrevendido')
+                    sinais.append('📉 Sobrevendido')
                 if row['MACD'] > 0:
-                    sinais.append('MACD positivo')
+                    sinais.append('✅ MACD positivo')
                 if row['Close'] < row['Bollinger_low']:
-                    sinais.append('Preço abaixo da banda inferior')
+                    sinais.append('💸 Preço abaixo da banda inferior')
                 if row['ADX'] > 25:
-                    sinais.append('Tendência forte')
+                    sinais.append('🔥 Tendência forte')
                 return ', '.join(sinais)
 
             df['Sinais'] = df.apply(gerar_sinal, axis=1)
