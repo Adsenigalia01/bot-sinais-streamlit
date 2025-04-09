@@ -22,20 +22,20 @@ if st.button("🔍 Analisar"):
         else:
             df.dropna(inplace=True)
 
-            # Indicadores técnicos
+            # Indicadores técnicos (versão segura)
             df['SMA50'] = SMAIndicator(close=df['Close'], window=50).sma_indicator()
             df['SMA200'] = SMAIndicator(close=df['Close'], window=200).sma_indicator()
             df['RSI'] = RSIIndicator(close=df['Close']).rsi()
 
             macd = MACD(close=df['Close'])
-            df['MACD'] = pd.Series(np.squeeze(macd.macd_diff()), index=df.index)
+            df['MACD'] = pd.Series(macd.macd_diff().to_numpy().flatten(), index=df.index)
 
             bb = BollingerBands(close=df['Close'])
-            df['Bollinger_high'] = pd.Series(np.squeeze(bb.bollinger_hband()), index=df.index)
-            df['Bollinger_low'] = pd.Series(np.squeeze(bb.bollinger_lband()), index=df.index)
+            df['Bollinger_high'] = pd.Series(bb.bollinger_hband().to_numpy().flatten(), index=df.index)
+            df['Bollinger_low'] = pd.Series(bb.bollinger_lband().to_numpy().flatten(), index=df.index)
 
             adx = ADXIndicator(high=df['High'], low=df['Low'], close=df['Close'])
-            df['ADX'] = pd.Series(np.squeeze(adx.adx()), index=df.index)
+            df['ADX'] = pd.Series(adx.adx().to_numpy().flatten(), index=df.index)
 
             # Estratégia de sinais
             def gerar_sinal(row):
