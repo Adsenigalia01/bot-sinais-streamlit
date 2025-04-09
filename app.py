@@ -6,65 +6,72 @@ from ta.momentum import RSIIndicator
 from ta.volatility import BollingerBands
 import streamlit as st
 
-st.set_page_config(page_title="Bot de Sinais", layout="wide")
-st.title("📈 Bot de Sinais - Ações e Criptomoedas")
+st.set_page_config(page_title="Bot de Sinais Simples", layout="wide")
+st.title("📈 Bot de Sinais Simplificado")
 
-# Entrada do usuário
-ativo = st.text_input("Digite o código do ativo (ex: PETR4.SA ou BTC-USD):", "PETR4.SA")
-periodo = st.selectbox("Período de análise:", ["3mo", "6mo", "1y"], index=1)
+ativo = st.text_input("Digite o código do ativo (ex: PETR4.SA ou BTC-USD):", "BTC-USD")
+periodo = st.selectbox("Período:", ["3mo", "6mo", "1y"], index=0)
 
 if st.button("🔍 Analisar"):
     try:
         df = yf.download(ativo, period=periodo, interval="1d")
 
         if df.empty or 'Close' not in df.columns:
-            st.error("❌ Ativo não encontrado ou sem dados disponíveis.")
+            st.error("❌ Dados indisponíveis para o ativo.")
         else:
             df.dropna(inplace=True)
 
-            # Indicadores técnicos
+            # Indicadores com tratamento de shape
             df['SMA50'] = SMAIndicator(close=df['Close'], window=50).sma_indicator()
             df['SMA200'] = SMAIndicator(close=df['Close'], window=200).sma_indicator()
             df['RSI'] = RSIIndicator(close=df['Close']).rsi()
 
-            # Corrigido: indicadores com saída 2D convertidos para 1D
             macd = MACD(close=df['Close'])
             df['MACD'] = pd.Series(macd.macd_diff().to_numpy().ravel(), index=df.index)
 
             bb = BollingerBands(close=df['Close'])
-            df['Bollinger_high'] = pd.Series(bb.bollinger_hband().to_numpy().ravel(), index=df.index)
             df['Bollinger_low'] = pd.Series(bb.bollinger_lband().to_numpy().ravel(), index=df.index)
+            df['Bollinger_high'] = pd.Series(bb.bollinger_hband().to_numpy().ravel(), index=df.index)
 
             adx = ADXIndicator(high=df['High'], low=df['Low'], close=df['Close'])
             df['ADX'] = pd.Series(adx.adx().to_numpy().ravel(), index=df.index)
 
-            # Estratégia de sinais
-            def gerar_sinal(row):
-                sinais = []
-                if row['SMA50'] > row['SMA200']:
-                    sinais.append('📈 Tendência de Alta')
-                if row['RSI'] < 30:
-                    sinais.append('📉 Sobrevendido')
-                if row['MACD'] > 0:
-                    sinais.append('✅ MACD positivo')
-                if row['Close'] < row['Bollinger_low']:
-                    sinais.append('💸 Preço abaixo da banda inferior')
-                if row['ADX'] > 25:
-                    sinais.append('🔥 Tendência forte')
-                return ', '.join(sinais)
+            # Última linha
+            ultimo = df.iloc[-1]
 
-            df['Sinais'] = df.apply(gerar_sinal, axis=1)
-            sinal_hoje = df['Sinais'].iloc[-1]
+            # Pontuação e decisão
+            pontos = 0
+            if ultimo['SMA50'] > ultimo['SMA200']:
+                pontos += 1
+            if ultimo['RSI'] < 30:
+                pontos += 1
+            if ultimo['MACD'] > 0:
+                pontos += 1
+            if ultimo['Close'] < ultimo['Bollinger_low']:
+                pontos += 1
+            if ultimo['ADX'] > 25:
+                pontos += 1
 
-            st.subheader(f"📊 Sinais mais recentes para {ativo}")
-            st.write(f"**Data:** {df.index[-1].date()}  ")
-            st.success(f"**Sinal de hoje:** {sinal_hoje if sinal_hoje else 'Sem sinal relevante'}")
+            # Classificação simples
+            if ultimo['MACD'] < 0 and ultimo['RSI'] > 70 and ultimo['Close'] > ultimo['Bollinger_high']:
+                sinal = "🔴 Alerta para venda"
+            elif ultimo['SMA50'] < ultimo['SMA200'] and ultimo['RSI'] > 70:
+                sinal = "❌ Ótimo para venda"
+            elif pontos == 5:
+                sinal = "🟢 Ótimo para compra"
+            elif pontos >= 4:
+                sinal = "🟡 Alerta para compra"
+            elif pontos == 3:
+                sinal = "🔁 Instável"
+            else:
+                sinal = "⚪ Estável"
 
-            with st.expander("📉 Ver dados brutos"):
-                st.dataframe(df.tail(10))
+            st.subheader(f"📊 Resultado da Análise para {ativo}")
+            st.write(f"**Data da análise:** {df.index[-1].date()}")
+            st.success(f"**Classificação:** {sinal}")
 
-            with st.expander("📈 Gráficos"):
-                st.line_chart(df[['Close', 'SMA50', 'SMA200']].dropna())
+            with st.expander("📉 Ver últimos dados"):
+                st.dataframe(df.tail(5))
 
     except Exception as e:
         st.error(f"Erro ao buscar dados: {str(e)}")
