@@ -1,26 +1,38 @@
-# 📈 Bot de Sinais - Ações e Criptomoedas
+# 📈 Bot de Sinais de Compra e Venda
 
-Este projeto é um app em Python usando Streamlit para analisar ativos (ações ou criptomoedas) e gerar sinais de compra ou venda com base em 5 estratégias técnicas.
+Este é um aplicativo Streamlit que utiliza a API da Twelve Data para analisar ativos como ações e criptomoedas e identificar os melhores momentos para compra e venda com base em múltiplos indicadores técnicos.
 
-## ✅ Estratégias aplicadas:
-- Média móvel (SMA50 vs SMA200)
-- RSI (Índice de Força Relativa)
-- MACD
-- Bandas de Bollinger
-- ADX (Índice Direcional Médio)
+---
 
-## 🚀 Como rodar localmente
+## 🚀 Funcionalidades
 
-1. Clone este repositório
-2. Instale os requisitos com:
-   ```
-   pip install -r requirements.txt
-   ```
-3. Rode o app com:
-   ```
-   streamlit run app.py
-   ```
+- Análise automática de ativos favoritos
+- Indicadores técnicos usados:
+  - Média Móvel (SMA 50 e SMA 200)
+  - RSI (Índice de Força Relativa)
+  - MACD
+  - Bandas de Bollinger
+- Resultados simplificados com mensagens claras:
+  - 🟢 Ótimo para compra
+  - ❌ Ótimo para venda
+  - 🟡 Alerta para compra
+  - 🔁 Instável
+  - ⚪ Estável
+- Envio automático dos sinais por WhatsApp via Twilio
 
-## ☁️ Hospedagem online
+---
 
-Você pode subir este projeto diretamente no [Streamlit Cloud](https://streamlit.io/cloud) e rodar online, até mesmo no celular!
+## 📋 Pré-requisitos
+
+- Conta no [Twelve Data](https://twelvedata.com) com API Key
+- Conta no [Twilio](https://www.twilio.com/) com acesso ao envio via WhatsApp
+- Python 3.8+
+
+---
+
+## 🔧 Instalação
+
+1. Clone o repositório:
+```bash
+git clone https://github.com/seuusuario/bot-sinais-streamlit.git
+cd bot-sinais-streamlit
