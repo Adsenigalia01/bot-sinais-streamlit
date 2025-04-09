@@ -6,7 +6,7 @@ from ta.momentum import RSIIndicator
 from ta.volatility import BollingerBands
 import streamlit as st
 
-st.set_page_config(page_title="Bot de Sinais Simples", layout="wide")
+st.set_page_config(page_title="Bot de Sinais Simplificado", layout="wide")
 st.title("📈 Bot de Sinais Simplificado")
 
 ativo = st.text_input("Digite o código do ativo (ex: PETR4.SA ou BTC-USD):", "BTC-USD")
@@ -21,25 +21,19 @@ if st.button("🔍 Analisar"):
         else:
             df.dropna(inplace=True)
 
-            # Indicadores com tratamento de shape
+            # Indicadores técnicos (forçando todos como Series 1D)
             df['SMA50'] = SMAIndicator(close=df['Close'], window=50).sma_indicator()
             df['SMA200'] = SMAIndicator(close=df['Close'], window=200).sma_indicator()
             df['RSI'] = RSIIndicator(close=df['Close']).rsi()
+            df['MACD'] = MACD(close=df['Close']).macd_diff()
+            df['Bollinger_low'] = BollingerBands(close=df['Close']).bollinger_lband()
+            df['Bollinger_high'] = BollingerBands(close=df['Close']).bollinger_hband()
+            df['ADX'] = ADXIndicator(high=df['High'], low=df['Low'], close=df['Close']).adx()
 
-            macd = MACD(close=df['Close'])
-            df['MACD'] = pd.Series(macd.macd_diff().to_numpy().ravel(), index=df.index)
-
-            bb = BollingerBands(close=df['Close'])
-            df['Bollinger_low'] = pd.Series(bb.bollinger_lband().to_numpy().ravel(), index=df.index)
-            df['Bollinger_high'] = pd.Series(bb.bollinger_hband().to_numpy().ravel(), index=df.index)
-
-            adx = ADXIndicator(high=df['High'], low=df['Low'], close=df['Close'])
-            df['ADX'] = pd.Series(adx.adx().to_numpy().ravel(), index=df.index)
-
-            # Última linha
+            df.dropna(inplace=True)
             ultimo = df.iloc[-1]
 
-            # Pontuação e decisão
+            # Cálculo de pontuação para classificação
             pontos = 0
             if ultimo['SMA50'] > ultimo['SMA200']:
                 pontos += 1
