@@ -22,15 +22,15 @@ if st.button("🔍 Analisar"):
         else:
             df.dropna(inplace=True)
 
-            # Indicadores técnicos
-            df['SMA50'] = SMAIndicator(close=df['Close'], window=50).sma_indicator()
-            df['SMA200'] = SMAIndicator(close=df['Close'], window=200).sma_indicator()
-            df['RSI'] = RSIIndicator(close=df['Close']).rsi()
-            df['MACD'] = MACD(close=df['Close']).macd_diff()
+            # Indicadores técnicos com conversão para Series
+            df['SMA50'] = pd.Series(SMAIndicator(close=df['Close'], window=50).sma_indicator(), index=df.index)
+            df['SMA200'] = pd.Series(SMAIndicator(close=df['Close'], window=200).sma_indicator(), index=df.index)
+            df['RSI'] = pd.Series(RSIIndicator(close=df['Close']).rsi(), index=df.index)
+            df['MACD'] = pd.Series(MACD(close=df['Close']).macd_diff(), index=df.index)
             bb = BollingerBands(close=df['Close'])
-            df['Bollinger_high'] = bb.bollinger_hband()
-            df['Bollinger_low'] = bb.bollinger_lband()
-            df['ADX'] = ADXIndicator(high=df['High'], low=df['Low'], close=df['Close']).adx()
+            df['Bollinger_high'] = pd.Series(bb.bollinger_hband(), index=df.index)
+            df['Bollinger_low'] = pd.Series(bb.bollinger_lband(), index=df.index)
+            df['ADX'] = pd.Series(ADXIndicator(high=df['High'], low=df['Low'], close=df['Close']).adx(), index=df.index)
 
             # Estratégia de sinais
             def gerar_sinal(row):
