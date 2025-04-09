@@ -22,20 +22,31 @@ if st.button("🔍 Analisar"):
         else:
             df.dropna(inplace=True)
 
-            # Indicadores técnicos (versão segura)
+            # Indicadores técnicos
             df['SMA50'] = SMAIndicator(close=df['Close'], window=50).sma_indicator()
             df['SMA200'] = SMAIndicator(close=df['Close'], window=200).sma_indicator()
             df['RSI'] = RSIIndicator(close=df['Close']).rsi()
 
+            # MACD seguro
             macd = MACD(close=df['Close'])
-            df['MACD'] = pd.Series(macd.macd_diff().to_numpy().flatten(), index=df.index)
+            macd_diff = macd.macd_diff()
+            if isinstance(macd_diff, pd.DataFrame):
+                df['MACD'] = macd_diff.iloc[:, 0]
+            else:
+                df['MACD'] = macd_diff
 
+            # Bollinger seguro
             bb = BollingerBands(close=df['Close'])
-            df['Bollinger_high'] = pd.Series(bb.bollinger_hband().to_numpy().flatten(), index=df.index)
-            df['Bollinger_low'] = pd.Series(bb.bollinger_lband().to_numpy().flatten(), index=df.index)
+            high = bb.bollinger_hband()
+            low = bb.bollinger_lband()
 
+            df['Bollinger_high'] = high.iloc[:, 0] if isinstance(high, pd.DataFrame) else high
+            df['Bollinger_low'] = low.iloc[:, 0] if isinstance(low, pd.DataFrame) else low
+
+            # ADX seguro
             adx = ADXIndicator(high=df['High'], low=df['Low'], close=df['Close'])
-            df['ADX'] = pd.Series(adx.adx().to_numpy().flatten(), index=df.index)
+            adx_values = adx.adx()
+            df['ADX'] = adx_values.iloc[:, 0] if isinstance(adx_values, pd.DataFrame) else adx_values
 
             # Estratégia de sinais
             def gerar_sinal(row):
