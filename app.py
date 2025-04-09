@@ -39,3 +39,41 @@ if st.button("🔍 Analisar"):
                 st.error("❌ Dados insuficientes após cálculo dos indicadores.")
             else:
                 # Seleciona a última linha com todos os dados
+                ultimo = df.iloc[-1]
+
+                # Pontuação
+                pontos = 0
+                if ultimo['SMA50'] > ultimo['SMA200']:
+                    pontos += 1
+                if ultimo['RSI'] < 30:
+                    pontos += 1
+                if ultimo['MACD'] > 0:
+                    pontos += 1
+                if ultimo['Close'] < ultimo['Bollinger_low']:
+                    pontos += 1
+                if ultimo['ADX'] > 25:
+                    pontos += 1
+
+                # Classificação final
+                if ultimo['MACD'] < 0 and ultimo['RSI'] > 70 and ultimo['Close'] > ultimo['Bollinger_high']:
+                    sinal = "🔴 Alerta para venda"
+                elif ultimo['SMA50'] < ultimo['SMA200'] and ultimo['RSI'] > 70:
+                    sinal = "❌ Ótimo para venda"
+                elif pontos == 5:
+                    sinal = "🟢 Ótimo para compra"
+                elif pontos >= 4:
+                    sinal = "🟡 Alerta para compra"
+                elif pontos == 3:
+                    sinal = "🔁 Instável"
+                else:
+                    sinal = "⚪ Estável"
+
+                st.subheader(f"📊 Resultado da Análise para {ativo}")
+                st.write(f"**Data da análise:** {df.index[-1].date()}")
+                st.success(f"**Classificação:** {sinal}")
+
+                with st.expander("📉 Ver últimos dados"):
+                    st.dataframe(df.tail(5))
+
+    except Exception as e:
+        st.error(f"Erro ao buscar dados: {str(e)}")
