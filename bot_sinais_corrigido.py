@@ -1,35 +1,46 @@
-import yfinance as yf
+import streamlit as st
 import pandas as pd
 import numpy as np
+from twelvedata import TDClient
 from ta.trend import SMAIndicator, MACD, ADXIndicator
 from ta.momentum import RSIIndicator
 from ta.volatility import BollingerBands
-import streamlit as st
 
-st.set_page_config(page_title="Bot de Sinais Simplificado", layout="wide")
-st.title("📈 Bot de Sinais Simplificado")
+st.set_page_config(page_title="Bot de Sinais com Twelve Data", layout="wide")
+st.title("📊 Bot de Sinais com API da Twelve Data")
 
-ativo = st.text_input("Digite o código do ativo (ex: PETR4.SA ou BTC-USD):", "BTC-USD")
-periodo = st.selectbox("Período:", ["3mo", "6mo", "1y"], index=0)
+api_key = st.secrets["TWELVE_DATA_API_KEY"] if "TWELVE_DATA_API_KEY" in st.secrets else st.text_input("Digite sua API Key da Twelve Data:", "")
 
-if st.button("🔍 Analisar"):
+ativo = st.text_input("Digite o código do ativo (ex: BTC/USD ou AAPL):", "BTC/USD")
+periodo = st.selectbox("Período de análise:", ["30", "60", "90", "180"], index=0)
+
+if st.button("🔍 Analisar") and api_key:
     try:
-        df = yf.download(ativo, period=periodo, interval="1d")
+        td = TDClient(apikey=api_key)
+        ts = td.time_series(
+            symbol=ativo,
+            interval="1day",
+            outputsize=int(periodo),
+            timezone="UTC"
+        ).as_pandas()
 
-        if df.empty or 'Close' not in df.columns:
-            st.error("❌ Dados indisponíveis para o ativo.")
+        if ts is None or ts.empty:
+            st.error("❌ Não foi possível buscar os dados.")
         else:
-            close = df['Close']
-            high = df['High']
-            low = df['Low']
+            ts.sort_index(inplace=True)
+            df = ts.rename(columns={"close": "Close", "high": "High", "low": "Low", "open": "Open"})
+            df['Close'] = df['Close'].astype(float)
+            df['High'] = df['High'].astype(float)
+            df['Low'] = df['Low'].astype(float)
 
-            df['SMA50'] = SMAIndicator(close=close, window=50).sma_indicator().to_numpy().flatten()
-            df['SMA200'] = SMAIndicator(close=close, window=200).sma_indicator().to_numpy().flatten()
-            df['RSI'] = RSIIndicator(close=close).rsi().to_numpy().flatten()
-            df['MACD'] = MACD(close=close).macd_diff().to_numpy().flatten()
-            df['Bollinger_low'] = BollingerBands(close=close).bollinger_lband().to_numpy().flatten()
-            df['Bollinger_high'] = BollingerBands(close=close).bollinger_hband().to_numpy().flatten()
-            df['ADX'] = ADXIndicator(high=high, low=low, close=close).adx().to_numpy().flatten()
+            # Indicadores
+            df['SMA50'] = SMAIndicator(close=df['Close'], window=50).sma_indicator()
+            df['SMA200'] = SMAIndicator(close=df['Close'], window=200).sma_indicator()
+            df['RSI'] = RSIIndicator(close=df['Close']).rsi()
+            df['MACD'] = MACD(close=df['Close']).macd_diff()
+            df['Bollinger_low'] = BollingerBands(close=df['Close']).bollinger_lband()
+            df['Bollinger_high'] = BollingerBands(close=df['Close']).bollinger_hband()
+            df['ADX'] = ADXIndicator(high=df['High'], low=df['Low'], close=df['Close']).adx()
 
             df.dropna(inplace=True)
 
@@ -37,8 +48,8 @@ if st.button("🔍 Analisar"):
                 st.error("❌ Dados insuficientes após cálculo dos indicadores.")
             else:
                 ultimo = df.iloc[-1]
-
                 pontos = 0
+
                 if ultimo['SMA50'] > ultimo['SMA200']:
                     pontos += 1
                 if ultimo['RSI'] < 30:
@@ -63,12 +74,12 @@ if st.button("🔍 Analisar"):
                 else:
                     sinal = "⚪ Estável"
 
-                st.subheader(f"📊 Resultado da Análise para {ativo}")
-                st.write(f"**Data da análise:** {df.index[-1].date()}")
-                st.success(f"**Classificação:** {sinal}")
-
-                with st.expander("📉 Ver últimos dados"):
+                st.subheader(f"📈 Resultado da análise para {ativo}")
+                st.success(f"Classificação: **{sinal}**")
+                st.write(f"📅 Última data: {df.index[-1].date()}")
+                with st.expander("🔍 Últimos dados"):
                     st.dataframe(df.tail(5))
 
     except Exception as e:
-        st.error(f"Erro ao buscar dados: {str(e)}")
+        st.error(f"Erro: {e}")
+
