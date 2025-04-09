@@ -1,4 +1,3 @@
-
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -20,28 +19,25 @@ if st.button("🔍 Analisar"):
         if df.empty or 'Close' not in df.columns:
             st.error("❌ Dados indisponíveis para o ativo.")
         else:
-            # Calcula os indicadores
-            df['SMA50'] = SMAIndicator(close=df['Close'], window=50).sma_indicator()
-            df['SMA200'] = SMAIndicator(close=df['Close'], window=200).sma_indicator()
-            df['RSI'] = RSIIndicator(close=df['Close']).rsi()
-            df['MACD'] = MACD(close=df['Close']).macd_diff().squeeze()
-            df['Bollinger_low'] = BollingerBands(close=df['Close']).bollinger_lband().squeeze()
-            df['Bollinger_high'] = BollingerBands(close=df['Close']).bollinger_hband().squeeze()
-            df['ADX'] = ADXIndicator(high=df['High'], low=df['Low'], close=df['Close']).adx()
+            close = df['Close']
+            high = df['High']
+            low = df['Low']
 
-            # Remove linhas com valores faltando
-            df.dropna(subset=[
-                'Close', 'High', 'Low', 'Open',
-                'SMA50', 'SMA200', 'RSI',
-                'MACD', 'Bollinger_low', 'Bollinger_high', 'ADX'
-            ], inplace=True)
+            df['SMA50'] = pd.Series(SMAIndicator(close=close, window=50).sma_indicator())
+            df['SMA200'] = pd.Series(SMAIndicator(close=close, window=200).sma_indicator())
+            df['RSI'] = pd.Series(RSIIndicator(close=close).rsi())
+            df['MACD'] = pd.Series(MACD(close=close).macd_diff())
+            df['Bollinger_low'] = pd.Series(BollingerBands(close=close).bollinger_lband())
+            df['Bollinger_high'] = pd.Series(BollingerBands(close=close).bollinger_hband())
+            df['ADX'] = pd.Series(ADXIndicator(high=high, low=low, close=close).adx())
+
+            df.dropna(inplace=True)
 
             if df.empty:
                 st.error("❌ Dados insuficientes após cálculo dos indicadores.")
             else:
                 ultimo = df.iloc[-1]
 
-                # Pontuação
                 pontos = 0
                 if ultimo['SMA50'] > ultimo['SMA200']:
                     pontos += 1
@@ -54,7 +50,6 @@ if st.button("🔍 Analisar"):
                 if ultimo['ADX'] > 25:
                     pontos += 1
 
-                # Classificação final
                 if ultimo['MACD'] < 0 and ultimo['RSI'] > 70 and ultimo['Close'] > ultimo['Bollinger_high']:
                     sinal = "🔴 Alerta para venda"
                 elif ultimo['SMA50'] < ultimo['SMA200'] and ultimo['RSI'] > 70:
