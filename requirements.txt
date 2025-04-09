@@ -1,4 +1,5 @@
 streamlit
-yfinance
-pandas
+twelvedata
 ta
+pandas
+numpy
