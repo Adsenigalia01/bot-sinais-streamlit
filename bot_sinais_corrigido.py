@@ -23,13 +23,13 @@ if st.button("🔍 Analisar"):
             high = df['High']
             low = df['Low']
 
-            df['SMA50'] = pd.Series(SMAIndicator(close=close, window=50).sma_indicator())
-            df['SMA200'] = pd.Series(SMAIndicator(close=close, window=200).sma_indicator())
-            df['RSI'] = pd.Series(RSIIndicator(close=close).rsi())
-            df['MACD'] = pd.Series(MACD(close=close).macd_diff())
-            df['Bollinger_low'] = pd.Series(BollingerBands(close=close).bollinger_lband())
-            df['Bollinger_high'] = pd.Series(BollingerBands(close=close).bollinger_hband())
-            df['ADX'] = pd.Series(ADXIndicator(high=high, low=low, close=close).adx())
+            df['SMA50'] = SMAIndicator(close=close, window=50).sma_indicator().to_numpy().flatten()
+            df['SMA200'] = SMAIndicator(close=close, window=200).sma_indicator().to_numpy().flatten()
+            df['RSI'] = RSIIndicator(close=close).rsi().to_numpy().flatten()
+            df['MACD'] = MACD(close=close).macd_diff().to_numpy().flatten()
+            df['Bollinger_low'] = BollingerBands(close=close).bollinger_lband().to_numpy().flatten()
+            df['Bollinger_high'] = BollingerBands(close=close).bollinger_hband().to_numpy().flatten()
+            df['ADX'] = ADXIndicator(high=high, low=low, close=close).adx().to_numpy().flatten()
 
             df.dropna(inplace=True)
 
