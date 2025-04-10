@@ -92,21 +92,20 @@ def get_data(ativo):
 # Main function
 st.title("Análise de Sinais para Ativos e Criptomoedas")
 
-# Escolher até 4 ativos favoritos
-favorites = st.multiselect("Escolha até 4 ativos ou criptomoedas favoritos", ativos, max_selections=4)
+# Escolher um único ativo
+ativo_selecionado = st.selectbox("Escolha um ativo ou criptomoeda", ativos)
 
-if favorites:
-    for ativo in favorites:
-        st.write(f"Analisando: {ativo}")
-        df = get_data(ativo)
-        if df is not None:
-            try:
-                df = calculate_indicators(df)
-                result = analyze(df)
+if ativo_selecionado:
+    st.write(f"Analisando: {ativo_selecionado}")
+    df = get_data(ativo_selecionado)
+    if df is not None:
+        try:
+            df = calculate_indicators(df)
+            result = analyze(df)
 
-                # Exibir o resultado
-                st.write(f"Resultado para {ativo}: {result}")
-            except ValueError as e:
-                st.error(f"Erro no cálculo para {ativo}: {e}")
+            # Exibir o resultado
+            st.write(f"Resultado para {ativo_selecionado}: {result}")
+        except ValueError as e:
+            st.error(f"Erro no cálculo para {ativo_selecionado}: {e}")
 else:
-    st.write("Por favor, selecione até 4 ativos ou criptomoedas.")
+    st.write("Por favor, selecione um ativo ou criptomoeda.")
