@@ -16,9 +16,12 @@ def get_data_twelvedata(symbol, api_key, interval='1day', period='365'):
     data = response.json()
     
     if "values" not in data:
-        return None
+        return None  # Caso não tenha retornado dados, retorna None
     
     df = pd.DataFrame(data['values'])
+    if df.empty:
+        return None  # Se o dataframe estiver vazio, retorna None
+    
     df['datetime'] = pd.to_datetime(df['datetime'])
     df.set_index('datetime', inplace=True)
     df['close'] = df['close'].astype(float)
@@ -93,7 +96,7 @@ api_key = st.text_input("Digite sua API Key do Twelve Data", type="password")
 
 # Lista de ativos válidos para o Twelve Data (simplificada)
 ativos_disponiveis = [
-    "AAPL", "GOOG", "AMZN", "BTC-USD", "ETH-USD", "PETR3.SA", "VALE3.SA", "BRL=X", "USOIL"
+    "AAPL", "GOOG", "AMZN", "BTC/USD", "ETH/USD", "PETR3.SA", "VALE3.SA", "USOIL", "BRL=X"
 ]
 
 # Escolher ativo
@@ -106,13 +109,16 @@ if api_key:
     df = get_data_twelvedata(ativo, api_key)
     
     if df is not None:
-        # Calcular indicadores
-        df = calculate_indicators(df)
-        
-        # Analisar sinais
-        resultado = analyze_signals(df)
-        st.write(f"Resultado da análise: {resultado}")
+        try:
+            # Calcular indicadores
+            df = calculate_indicators(df)
+            
+            # Analisar sinais
+            resultado = analyze_signals(df)
+            st.write(f"Resultado da análise: {resultado}")
+        except Exception as e:
+            st.write(f"Erro ao calcular os indicadores: {e}")
     else:
-        st.write("Erro ao buscar dados para o ativo.")
+        st.write("Erro ao buscar dados para o ativo. Verifique se o símbolo está correto ou se há um problema com a API.")
 else:
     st.write("Por favor, insira sua API Key para continuar.")
