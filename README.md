@@ -1,9 +1,11 @@
-# Bot de Sinais de Compra e Venda
+# Bot de Sinais - Análise de Ativos
 
-Este aplicativo analisa ativos e criptomoedas usando indicadores técnicos.
+## Descrição
 
-## Como usar
+Este aplicativo realiza uma análise técnica de ativos financeiros e criptomoedas. Com base em 6 indicadores técnicos, o app informa se o ativo está no momento certo para compra ou venda.
 
-1. Instale as dependências:
-```bash
-pip install -r requirements.txt
+## Como rodar
+
+1. Clone este repositório:
+   ```bash
+   git clone <URL do repositório>
