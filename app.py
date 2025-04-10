@@ -9,6 +9,8 @@ def get_asset_data(asset, period='1y'):
     try:
         # Obter dados históricos para o ativo
         data = yf.download(asset, period=period)
+        if data.empty:
+            raise ValueError(f"Não foi possível obter dados para o ativo {asset}")
         return data
     except Exception as e:
         st.error(f"Erro ao buscar dados para o ativo {asset}: {e}")
@@ -27,7 +29,8 @@ def calculate_indicators(df):
         df['EMA200'] = ta.trend.ema_indicator(df['Close'], window=200)
         return df
     except Exception as e:
-        raise ValueError(f"Erro ao calcular os indicadores: {e}")
+        st.error(f"Erro ao calcular os indicadores: {e}")
+        raise
 
 # Função para análise de sinais
 def analyze_signals(df):
@@ -112,11 +115,13 @@ def manage_favorites():
         
         if df is not None:
             # Calcular indicadores
-            df = calculate_indicators(df)
-            
-            # Analisar sinais
-            result = analyze_signals(df)
-            st.write(f"Resultado da análise para {selected_asset}: {result}")
+            try:
+                df = calculate_indicators(df)
+                # Analisar sinais
+                result = analyze_signals(df)
+                st.write(f"Resultado da análise para {selected_asset}: {result}")
+            except Exception as e:
+                st.error(f"Erro no cálculo dos indicadores: {e}")
 
 # Rodar a função de gerenciamento de favoritos
 if __name__ == "__main__":
