@@ -10,7 +10,7 @@ def calculate_indicators(df):
     
     # Garantir que 'Close' seja uma série unidimensional
     if isinstance(df['Close'], pd.DataFrame):
-        df['Close'] = df['Close'].squeeze()
+        df['Close'] = df['Close'].squeeze()  # Convertendo para 1D se for DataFrame
 
     # Calculando os indicadores
     try:
