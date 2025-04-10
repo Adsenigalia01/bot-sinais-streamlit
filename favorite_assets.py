@@ -16,8 +16,10 @@ def save_favorite_assets(favorites):
 # Função para adicionar ou remover ativos
 def manage_favorite_assets(action, asset):
     favorites = load_favorite_assets()
+    # Adicionar ativo
     if action == "Adicionar" and asset not in favorites:
         favorites.append(asset)
+    # Remover ativo
     elif action == "Remover" and asset in favorites:
         favorites.remove(asset)
     save_favorite_assets(favorites)
