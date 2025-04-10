@@ -22,6 +22,7 @@ def fetch_data(symbol, period='365', api_key=''):
     if not api_key:
         raise ValueError("API Key não fornecida")
     
+    # Ajustando para garantir que o símbolo esteja correto
     url = f'https://api.twelvedata.com/time_series?symbol={symbol}&interval=1day&apikey={api_key}&outputsize={period}'
     
     response = requests.get(url)
@@ -41,8 +42,9 @@ def calculate_indicators(df):
     df['SMA200'] = ta.trend.sma_indicator(df['close'], window=200)
     df['RSI'] = ta.momentum.rsi(df['close'], window=14)
     df['MACD'] = ta.trend.macd(df['close'])
-    df['Stochastic'] = ta.momentum.stochastic(df['high'], df['low'], df['close'], window=14)
+    # Substituindo o Stochastic por uma alternativa de indicador
     df['EMA'] = ta.trend.ema_indicator(df['close'], window=20)
+    df['ATR'] = ta.volatility.average_true_range(df['high'], df['low'], df['close'], window=14)  # Usando o ATR como alternativa
     
     return df
 
@@ -52,8 +54,8 @@ def evaluate_signal(df):
         "SMA50": df['SMA50'].iloc[-1] > df['SMA200'].iloc[-1],
         "RSI": df['RSI'].iloc[-1] < 30,
         "MACD": df['MACD'].iloc[-1] > 0,
-        "Stochastic": df['Stochastic'].iloc[-1] > 0.8,
-        "EMA": df['EMA'].iloc[-1] > df['SMA200'].iloc[-1]
+        "EMA": df['EMA'].iloc[-1] > df['SMA200'].iloc[-1],
+        "ATR": df['ATR'].iloc[-1] < df['ATR'].iloc[-2]  # ATR de baixa volatilidade é sinal de estabilidade
     }
     
     count = sum(signals.values())
