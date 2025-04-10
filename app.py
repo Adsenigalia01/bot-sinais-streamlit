@@ -3,28 +3,30 @@ import pandas as pd
 import ta
 import streamlit as st
 
+# Lista de ativos e criptomoedas
+ativos = [
+    "AAPL", "GOOG", "AMZN", "MSFT", "TSLA", "META", "SPY", "QQQ", "BTC-USD", "ETH-USD",
+    "XRP-USD", "ADA-USD", "LTC-USD", "SOL-USD", "DOGE-USD", "PETR4.SA", "VALE3.SA", "ITUB4.SA", 
+    "B3SA3.SA", "BRFS3.SA", "PETR3.SA", "WEGE3.SA", "USDCAD=X", "OIL=F", "GOLD=F", "SILVER=F"
+]
+
 # Função para calcular os indicadores
 def calculate_indicators(df):
     if df.empty:
         raise ValueError("Os dados do ativo estão vazios.")
     
     # Garantir que 'Close' seja uma série unidimensional
-    if isinstance(df['Close'], pd.DataFrame):
-        df['Close'] = df['Close'].squeeze()  # Convertendo para 1D se for DataFrame
+    df['Close'] = df['Close'].squeeze()
     
-    # Caso ainda esteja como numpy ndarray, vamos garantir que seja uma série unidimensional
-    if isinstance(df['Close'], pd.Series):
-        df['Close'] = pd.Series(df['Close'].values.flatten())  # Garantindo que seja unidimensional
-
     # Calculando os indicadores
     try:
-        st.write("Calculando indicadores...")  # Log de status
         df['SMA50'] = ta.trend.sma_indicator(df['Close'], window=50)
         df['SMA200'] = ta.trend.sma_indicator(df['Close'], window=200)
         df['RSI'] = ta.momentum.rsi(df['Close'], window=14)
         df['MACD'] = ta.trend.macd_diff(df['Close'])
         df['Stochastic'] = ta.momentum.stochastic_oscillator(df['Close'], window=14)
         df['ADX'] = ta.trend.adx(df['Close'], window=14)
+        df['CCI'] = ta.trend.cci(df['Close'], window=14)
     except Exception as e:
         st.write(f"Erro ao calcular os indicadores: {e}")  # Exibindo o erro completo no Streamlit
         raise ValueError(f"Erro ao calcular os indicadores: {e}")
@@ -62,37 +64,49 @@ def analyze(df):
     else:
         sell_signals += 1
 
+    if df['CCI'].iloc[-1] > 100:
+        buy_signals += 1
+    elif df['CCI'].iloc[-1] < -100:
+        sell_signals += 1
+
     # Definir a análise com base na quantidade de sinais
-    if buy_signals == 6:
+    if buy_signals == 7:
         return "🟢 Ótimo para compra"
-    elif buy_signals >= 4:
+    elif buy_signals >= 5:
         return "🟡 Alerta para compra"
-    elif sell_signals == 6:
+    elif sell_signals == 7:
         return "❌ Ótimo para venda"
-    elif sell_signals >= 4:
+    elif sell_signals >= 5:
         return "🔴 Alerta para venda"
     else:
         return "⚪ Instável"
 
+# Função para baixar dados de Yahoo Finance
+def get_data(ativo):
+    df = yf.download(ativo, period="1y", interval="1d")
+    if df.empty:
+        st.error(f"Não foi possível obter dados para o ativo: {ativo}")
+        return None
+    return df
+
 # Main function
 st.title("Análise de Sinais para Ativos e Criptomoedas")
 
-# Escolher o ativo
-ativo = st.selectbox("Escolha o ativo ou criptomoeda", ["AAPL", "BTC-USD", "ETH-USD", "PETR4.SA", "VALE3.SA"])
+# Escolher até 4 ativos favoritos
+favorites = st.multiselect("Escolha até 4 ativos ou criptomoedas favoritos", ativos, max_selections=4)
 
-# Obter os dados do ativo selecionado
-df = yf.download(ativo, period="1y", interval="1d")
+if favorites:
+    for ativo in favorites:
+        st.write(f"Analisando: {ativo}")
+        df = get_data(ativo)
+        if df is not None:
+            try:
+                df = calculate_indicators(df)
+                result = analyze(df)
 
-# Verificar se os dados foram carregados corretamente
-if df.empty:
-    st.error("Não foi possível obter dados para o ativo selecionado.")
+                # Exibir o resultado
+                st.write(f"Resultado para {ativo}: {result}")
+            except ValueError as e:
+                st.error(f"Erro no cálculo para {ativo}: {e}")
 else:
-    # Calcular os indicadores e analisar
-    try:
-        df = calculate_indicators(df)
-        result = analyze(df)
-
-        # Exibir o resultado
-        st.write(f"Resultado para {ativo}: {result}")
-    except ValueError as e:
-        st.error(f"Erro no cálculo: {e}")
+    st.write("Por favor, selecione até 4 ativos ou criptomoedas.")
