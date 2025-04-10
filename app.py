@@ -14,7 +14,7 @@ def calculate_indicators(df):
     
     # Caso ainda esteja como numpy ndarray, vamos garantir que seja uma série unidimensional
     if isinstance(df['Close'], pd.Series):
-        df['Close'] = df['Close'].values.flatten()  # Convertendo para 1D
+        df['Close'] = pd.Series(df['Close'].values.flatten())  # Garantindo que seja unidimensional
 
     # Calculando os indicadores
     try:
