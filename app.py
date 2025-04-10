@@ -1,79 +1,94 @@
-import yfinance as yf
-import pandas as pd
-import numpy as np
-from ta.trend import SMAIndicator, MACD, ADXIndicator
-from ta.momentum import RSIIndicator
-from ta.volatility import BollingerBands
 import streamlit as st
+import requests
+import pandas as pd
+import ta
 
-st.set_page_config(page_title="Bot de Sinais Simplificado", layout="wide")
-st.title("📈 Bot de Sinais Simplificado")
+st.set_page_config(page_title="Bot de Sinais", layout="centered")
+st.title("🤖 Bot de Sinais - Análise Técnica de Ativos")
 
-ativo = st.text_input("Digite o código do ativo (ex: PETR4.SA ou BTC-USD):", "BTC-USD")
-periodo = st.selectbox("Período:", ["3mo", "6mo", "1y"], index=0)
+st.markdown("Este app analisa ativos com base em indicadores técnicos e sugere momentos de **compra** ou **venda**.")
 
-if st.button("🔍 Analisar"):
-    try:
-        df = yf.download(ativo, period=periodo, interval="1d")
+# Entrada da API Key
+api_key = st.text_input("🔑 Insira sua API Key do Twelve Data:", type="password")
 
-        if df.empty or 'Close' not in df.columns:
-            st.error("❌ Dados indisponíveis para o ativo.")
-        else:
-            # Calcula os indicadores
-            df['SMA50'] = SMAIndicator(close=df['Close'], window=50).sma_indicator()
-            df['SMA200'] = SMAIndicator(close=df['Close'], window=200).sma_indicator()
-            df['RSI'] = RSIIndicator(close=df['Close']).rsi()
-            df['MACD'] = MACD(close=df['Close']).macd_diff().squeeze()
-            df['Bollinger_low'] = BollingerBands(close=df['Close']).bollinger_lband().squeeze()
-            df['Bollinger_high'] = BollingerBands(close=df['Close']).bollinger_hband().squeeze()
-            df['ADX'] = ADXIndicator(high=df['High'], low=df['Low'], close=df['Close']).adx()
+# Lista de ativos favoritos
+ativos_favoritos = ['BTC/USD', 'ETH/USD', 'PETR4.SA', 'AAPL', 'VALE3.SA']
+ativo = st.selectbox("📈 Selecione o ativo para análise:", ativos_favoritos)
 
-            # Remove linhas com valores faltando (causam erro fora do horário de mercado)
-            df.dropna(subset=[
-                'Close', 'High', 'Low', 'Open',
-                'SMA50', 'SMA200', 'RSI',
-                'MACD', 'Bollinger_low', 'Bollinger_high', 'ADX'
-            ], inplace=True)
+# Função para buscar dados
+def buscar_dados_twelvedata(simbolo, api_key):
+    url = f"https://api.twelvedata.com/time_series?symbol={simbolo}&interval=1day&outputsize=365&apikey={api_key}"
+    resposta = requests.get(url)
+    dados = resposta.json()
 
-            if df.empty:
-                st.error("❌ Dados insuficientes após cálculo dos indicadores.")
-            else:
-                # Seleciona a última linha com todos os dados
-                ultimo = df.iloc[-1]
+    if "values" not in dados:
+        raise Exception(f"Erro na API: {dados.get('message', 'Erro desconhecido')}")
 
-                # Pontuação
-                pontos = 0
-                if ultimo['SMA50'] > ultimo['SMA200']:
-                    pontos += 1
-                if ultimo['RSI'] < 30:
-                    pontos += 1
-                if ultimo['MACD'] > 0:
-                    pontos += 1
-                if ultimo['Close'] < ultimo['Bollinger_low']:
-                    pontos += 1
-                if ultimo['ADX'] > 25:
-                    pontos += 1
+    df = pd.DataFrame(dados["values"])
+    df["datetime"] = pd.to_datetime(df["datetime"])
+    df = df.sort_values("datetime")
+    df.set_index("datetime", inplace=True)
 
-                # Classificação final
-                if ultimo['MACD'] < 0 and ultimo['RSI'] > 70 and ultimo['Close'] > ultimo['Bollinger_high']:
-                    sinal = "🔴 Alerta para venda"
-                elif ultimo['SMA50'] < ultimo['SMA200'] and ultimo['RSI'] > 70:
-                    sinal = "❌ Ótimo para venda"
-                elif pontos == 5:
-                    sinal = "🟢 Ótimo para compra"
-                elif pontos >= 4:
-                    sinal = "🟡 Alerta para compra"
-                elif pontos == 3:
-                    sinal = "🔁 Instável"
+    for col in ["open", "high", "low", "close", "volume"]:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    return df
+
+# Função para aplicar indicadores e gerar sinais
+def analisar_sinais(df):
+    df["SMA50"] = ta.trend.sma_indicator(df["close"], window=50)
+    df["SMA200"] = ta.trend.sma_indicator(df["close"], window=200)
+    df["RSI"] = ta.momentum.rsi(df["close"])
+    macd = ta.trend.MACD(df["close"])
+    df["MACD"] = macd.macd()
+    df["Signal"] = macd.macd_signal()
+    bb = ta.volatility.BollingerBands(df["close"])
+    df["BB_upper"] = bb.bollinger_hband()
+    df["BB_lower"] = bb.bollinger_lband()
+    df["Momentum"] = ta.momentum.roc(df["close"])
+    stoch = ta.momentum.StochasticOscillator(df["high"], df["low"], df["close"])
+    df["Stoch"] = stoch.stoch()
+
+    # Pega o último valor para decisão
+    ultima = df.dropna().iloc[-1]
+
+    sinais = 0
+    if ultima["close"] > ultima["SMA50"] > ultima["SMA200"]:
+        sinais += 1
+    if ultima["RSI"] < 30:
+        sinais += 1
+    if ultima["MACD"] > ultima["Signal"]:
+        sinais += 1
+    if ultima["close"] < ultima["BB_lower"]:
+        sinais += 1
+    if ultima["Momentum"] > 0:
+        sinais += 1
+    if ultima["Stoch"] < 20:
+        sinais += 1
+
+    if sinais >= 6:
+        return "🟢 Ótimo para compra"
+    elif sinais == 4 or sinais == 5:
+        return "🟡 Alerta para compra"
+    elif ultima["RSI"] > 70 and ultima["MACD"] < ultima["Signal"]:
+        return "❌ Ótimo para venda"
+    elif ultima["RSI"] > 60 or ultima["close"] > ultima["BB_upper"]:
+        return "🔶 Alerta para venda"
+    else:
+        return "🔁 Instável"
+
+# Botão de Análise
+if st.button("📊 Analisar"):
+    if not api_key:
+        st.warning("Por favor, insira sua API Key do Twelve Data.")
+    else:
+        with st.spinner("🔍 Analisando dados..."):
+            try:
+                df = buscar_dados_twelvedata(ativo, api_key)
+                if df.dropna().shape[0] < 100:
+                    st.error("❌ Dados insuficientes após cálculo dos indicadores.")
                 else:
-                    sinal = "⚪ Estável"
-
-                st.subheader(f"📊 Resultado da Análise para {ativo}")
-                st.write(f"**Data da análise:** {df.index[-1].date()}")
-                st.success(f"**Classificação:** {sinal}")
-
-                with st.expander("📉 Ver últimos dados"):
-                    st.dataframe(df.tail(5))
-
-    except Exception as e:
-        st.error(f"Erro ao buscar dados: {str(e)}")
+                    resultado = analisar_sinais(df)
+                    st.success(f"Resultado para **{ativo}**: {resultado}")
+            except Exception as e:
+                st.error(f"Erro ao buscar dados: {e}")
