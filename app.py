@@ -5,18 +5,24 @@ import streamlit as st
 
 # Função para calcular os indicadores
 def calculate_indicators(df):
+    if df.empty:
+        raise ValueError("Os dados do ativo estão vazios.")
+    
     # Garantir que 'Close' seja uma série unidimensional
     if isinstance(df['Close'], pd.DataFrame):
         df['Close'] = df['Close'].squeeze()
-
+    
     # Calculando os indicadores
-    df['SMA50'] = ta.trend.sma_indicator(df['Close'], window=50)
-    df['SMA200'] = ta.trend.sma_indicator(df['Close'], window=200)
-    df['RSI'] = ta.momentum.rsi(df['Close'], window=14)
-    df['MACD'] = ta.trend.macd_diff(df['Close'])
-    df['Stochastic'] = ta.momentum.stochastic_oscillator(df['Close'], window=14)
-    df['ADX'] = ta.trend.adx(df['Close'], window=14)
-
+    try:
+        df['SMA50'] = ta.trend.sma_indicator(df['Close'], window=50)
+        df['SMA200'] = ta.trend.sma_indicator(df['Close'], window=200)
+        df['RSI'] = ta.momentum.rsi(df['Close'], window=14)
+        df['MACD'] = ta.trend.macd_diff(df['Close'])
+        df['Stochastic'] = ta.momentum.stochastic_oscillator(df['Close'], window=14)
+        df['ADX'] = ta.trend.adx(df['Close'], window=14)
+    except Exception as e:
+        raise ValueError(f"Erro ao calcular os indicadores: {e}")
+    
     return df
 
 # Função para realizar a análise
@@ -71,9 +77,13 @@ ativo = st.selectbox("Escolha o ativo ou criptomoeda", ["AAPL", "BTC-USD", "ETH-
 # Obter os dados do ativo selecionado
 df = yf.download(ativo, period="1y", interval="1d")
 
-# Calcular os indicadores e analisar
-df = calculate_indicators(df)
-result = analyze(df)
+# Verificar se os dados foram carregados corretamente
+if df.empty:
+    st.error("Não foi possível obter dados para o ativo selecionado.")
+else:
+    # Calcular os indicadores e analisar
+    df = calculate_indicators(df)
+    result = analyze(df)
 
-# Exibir o resultado
-st.write(f"Resultado para {ativo}: {result}")
+    # Exibir o resultado
+    st.write(f"Resultado para {ativo}: {result}")
