@@ -1,10 +1,9 @@
-# 📈 Bot de Sinais Streamlit
+# Bot de Sinais de Compra e Venda
 
-Este app analisa ativos (ações ou criptomoedas) com base em 6 indicadores técnicos e exibe uma sugestão textual de compra ou venda.
+Este aplicativo analisa ativos e criptomoedas usando indicadores técnicos.
 
-## 🔧 Como usar
+## Como usar
 
-1. Obtenha sua API Key gratuita em [https://twelvedata.com](https://twelvedata.com)
-2. Rode o app com:
+1. Instale as dependências:
 ```bash
-streamlit run app.py
+pip install -r requirements.txt
