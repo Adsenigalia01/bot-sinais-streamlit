@@ -3,7 +3,6 @@ import json
 import pandas as pd
 import requests
 import ta
-from twilio.rest import Client
 
 # Função para carregar os favoritos
 def load_favorites():
@@ -19,8 +18,10 @@ def save_favorites(favorites):
         json.dump(favorites, f)
 
 # Função para buscar dados de ativos
-def fetch_data(symbol, period='365'):
-    api_key = 'SUA_API_KEY'  # Substitua pela sua chave da TwelveData
+def fetch_data(symbol, period='365', api_key=''):
+    if not api_key:
+        raise ValueError("API Key não fornecida")
+    
     url = f'https://api.twelvedata.com/time_series?symbol={symbol}&interval=1day&apikey={api_key}&outputsize={period}'
     
     response = requests.get(url)
@@ -70,23 +71,11 @@ def evaluate_signal(df):
     else:
         return "❌ Ótimo para venda"
 
-# Função para enviar mensagem via WhatsApp
-def send_whatsapp_message(message, to_phone):
-    account_sid = 'YOUR_TWILIO_ACCOUNT_SID'
-    auth_token = 'YOUR_TWILIO_AUTH_TOKEN'
-    from_phone = 'whatsapp:+14155238886'  # Número do WhatsApp do Twilio
-    
-    client = Client(account_sid, auth_token)
-    
-    message = client.messages.create(
-        body=message,
-        from_=from_phone,
-        to=to_phone
-    )
-    return message.sid
-
 # Interface com Streamlit
 st.title('Bot de Sinais - Análise de Ativos')
+
+# Inserir API Key da TwelveData
+api_key = st.text_input("Insira sua API Key da Twelve Data")
 
 # Seleção de ativo
 assets = ['AAPL', 'BTC-USD', 'ETH-USD', 'PETR4.SA', 'VALE3.SA']  # Adicionar mais ativos conforme necessário
@@ -112,14 +101,13 @@ favorite_asset = st.selectbox("Escolha um favorito para análise", favorites)
 
 # Análise do ativo
 if st.button('Analisar'):
-    try:
-        df = fetch_data(favorite_asset)
-        df = calculate_indicators(df)
-        signal = evaluate_signal(df)
-        st.write(f"Resultado da análise para {favorite_asset}: {signal}")
-        
-        # Enviar WhatsApp se o sinal for forte
-        if signal in ["🟢 Ótimo para compra", "❌ Ótimo para venda"]:
-            send_whatsapp_message(f'Análise de {favorite_asset}: {signal}', 'whatsapp:+5511999999999')  # Número de destino do WhatsApp
-    except Exception as e:
-        st.error(f'Erro ao buscar dados: {e}')
+    if not api_key:
+        st.error("Você precisa fornecer uma API Key válida da Twelve Data.")
+    else:
+        try:
+            df = fetch_data(favorite_asset, api_key=api_key)
+            df = calculate_indicators(df)
+            signal = evaluate_signal(df)
+            st.write(f"Resultado da análise para {favorite_asset}: {signal}")
+        except Exception as e:
+            st.error(f'Erro ao buscar dados: {e}')
