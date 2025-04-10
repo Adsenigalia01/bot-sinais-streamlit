@@ -15,7 +15,7 @@ def calculate_indicators(df):
     if df.empty:
         raise ValueError("Os dados do ativo estão vazios.")
     
-    # Garantir que 'Close' seja uma série unidimensional
+    # Garantir que 'Close' seja uma série unidimensional (eliminar a possibilidade de ndarray de 2D)
     df['Close'] = df['Close'].squeeze()
     
     # Calculando os indicadores
