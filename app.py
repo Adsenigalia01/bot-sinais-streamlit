@@ -7,6 +7,8 @@ def manage_favorites():
 
     # Carregar ativos favoritos
     favorites = load_favorite_assets()
+    
+    # Exibir lista de ativos favoritos
     st.write("Ativos favoritos:", favorites)
 
     # Entrada para o ativo
@@ -17,17 +19,24 @@ def manage_favorites():
 
     if st.button(f"{action} ativo"):
         if asset_input:
+            # Adicionar ou remover o ativo conforme a ação escolhida
             manage_favorite_assets(action, asset_input)
             st.success(f"Ativo {action.lower()} com sucesso: {asset_input}")
         else:
             st.error("Digite um ativo para adicionar ou remover.")
 
-    # Restante do código de análise de indicadores
-    # Adicione aqui a lógica de cálculo dos indicadores e exibição do resultado
-    # Por exemplo, se o usuário escolheu um ativo da lista de favoritos:
+    # Exibir a lista de favoritos após a ação
+    favorites = load_favorite_assets()
+    st.write("Ativos favoritos atualizados:", favorites)
+
+    # Permitir o usuário selecionar um ativo da lista de favoritos para análise
     selected_asset = st.selectbox("Escolha um ativo para análise", favorites)
     if selected_asset:
         st.write(f"Analisando: {selected_asset}")
         # AQUI INSIRA A LÓGICA DE ANÁLISE DOS DADOS COM OS INDICADORES
         # Exemplo de exibição após a análise:
         st.write("Resultado da análise: 'Ótimo para compra'")
+
+# Rodar a função de gerenciamento de favoritos
+if __name__ == "__main__":
+    manage_favorites()
