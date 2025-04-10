@@ -25,17 +25,20 @@ def get_data_twelvedata(symbol, api_key, interval='1day', period='365'):
     df['datetime'] = pd.to_datetime(df['datetime'])
     df.set_index('datetime', inplace=True)
     df['close'] = df['close'].astype(float)
+    df['high'] = df['high'].astype(float)
+    df['low'] = df['low'].astype(float)
     return df
 
 # Função para calcular indicadores
 def calculate_indicators(df):
     try:
+        # Cálculo dos indicadores
         df['SMA50'] = ta.trend.sma_indicator(df['close'], window=50)
         df['SMA200'] = ta.trend.sma_indicator(df['close'], window=200)
         df['RSI'] = ta.momentum.rsi(df['close'], window=14)
         df['MACD'] = ta.trend.macd(df['close'])
-        df['Stochastic'] = ta.momentum.stoch(df['close'], window=14)
-        df['ADX'] = ta.trend.adx(df['close'])
+        df['Stochastic'] = ta.momentum.stoch(df['high'], df['low'], df['close'], window=14)
+        df['ADX'] = ta.trend.adx(df['high'], df['low'], df['close'], window=14)
         return df
     except Exception as e:
         raise ValueError(f"Erro ao calcular os indicadores: {e}")
