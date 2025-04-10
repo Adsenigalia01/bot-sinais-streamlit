@@ -35,49 +35,48 @@ def calculate_indicators(df):
 
 # Função para realizar a análise
 def analyze(df):
-    buy_signals = 0
-    sell_signals = 0
+    score = 0
 
-    # Verificar os sinais de compra/venda com base nos indicadores
+    # Verificar os sinais de compra/venda com base nos indicadores e atribuir pontuação
     if df['SMA50'].iloc[-1] > df['SMA200'].iloc[-1]:
-        buy_signals += 1
+        score -= 1  # Sinal de compra
     else:
-        sell_signals += 1
+        score += 1  # Sinal de venda
 
     if df['RSI'].iloc[-1] < 30:
-        buy_signals += 1
+        score -= 1  # Sinal de compra
     elif df['RSI'].iloc[-1] > 70:
-        sell_signals += 1
+        score += 1  # Sinal de venda
 
     if df['MACD'].iloc[-1] > 0:
-        buy_signals += 1
+        score -= 1  # Sinal de compra
     else:
-        sell_signals += 1
+        score += 1  # Sinal de venda
 
     if df['Stochastic'].iloc[-1] > 20:
-        buy_signals += 1
+        score -= 1  # Sinal de compra
     elif df['Stochastic'].iloc[-1] < 80:
-        sell_signals += 1
+        score += 1  # Sinal de venda
 
     if df['ADX'].iloc[-1] > 25:
-        buy_signals += 1
+        score -= 1  # Sinal de compra
     else:
-        sell_signals += 1
+        score += 1  # Sinal de venda
 
     if df['CCI'].iloc[-1] > 100:
-        buy_signals += 1
+        score -= 1  # Sinal de compra
     elif df['CCI'].iloc[-1] < -100:
-        sell_signals += 1
+        score += 1  # Sinal de venda
 
-    # Definir a análise com base na quantidade de sinais
-    if buy_signals == 7:
+    # Definir a análise com base na pontuação
+    if score == -7:
         return "🟢 Ótimo para compra"
-    elif buy_signals >= 5:
-        return "🟡 Alerta para compra"
-    elif sell_signals == 7:
+    elif -6 <= score <= -5:
+        return "🟡 Atenção para compra"
+    elif score == 7:
         return "❌ Ótimo para venda"
-    elif sell_signals >= 5:
-        return "🔴 Alerta para venda"
+    elif 5 <= score <= 6:
+        return "🔴 Atenção para venda"
     else:
         return "⚪ Instável"
 
