@@ -11,9 +11,10 @@ def calculate_indicators(df):
     # Garantir que 'Close' seja uma série unidimensional
     if isinstance(df['Close'], pd.DataFrame):
         df['Close'] = df['Close'].squeeze()
-    
+
     # Calculando os indicadores
     try:
+        st.write("Calculando indicadores...")  # Log de status
         df['SMA50'] = ta.trend.sma_indicator(df['Close'], window=50)
         df['SMA200'] = ta.trend.sma_indicator(df['Close'], window=200)
         df['RSI'] = ta.momentum.rsi(df['Close'], window=14)
@@ -21,6 +22,7 @@ def calculate_indicators(df):
         df['Stochastic'] = ta.momentum.stochastic_oscillator(df['Close'], window=14)
         df['ADX'] = ta.trend.adx(df['Close'], window=14)
     except Exception as e:
+        st.write(f"Erro ao calcular os indicadores: {e}")  # Exibindo o erro completo no Streamlit
         raise ValueError(f"Erro ao calcular os indicadores: {e}")
     
     return df
@@ -82,8 +84,11 @@ if df.empty:
     st.error("Não foi possível obter dados para o ativo selecionado.")
 else:
     # Calcular os indicadores e analisar
-    df = calculate_indicators(df)
-    result = analyze(df)
+    try:
+        df = calculate_indicators(df)
+        result = analyze(df)
 
-    # Exibir o resultado
-    st.write(f"Resultado para {ativo}: {result}")
+        # Exibir o resultado
+        st.write(f"Resultado para {ativo}: {result}")
+    except ValueError as e:
+        st.error(f"Erro no cálculo: {e}")
